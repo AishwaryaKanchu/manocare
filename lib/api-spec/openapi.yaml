@@ -1,0 +1,333 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: ManoCare API — medication reassurance for senior citizens
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: medicines
+    description: Medicine management
+  - name: log
+    description: Medicine intake log
+  - name: dashboard
+    description: Dashboard summary endpoints
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /medicines:
+    get:
+      operationId: listMedicines
+      tags: [medicines]
+      summary: List all medicines
+      responses:
+        "200":
+          description: All medicines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Medicine"
+    post:
+      operationId: createMedicine
+      tags: [medicines]
+      summary: Add a medicine
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicineInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medicine"
+
+  /medicines/next:
+    get:
+      operationId: getNextMedicine
+      tags: [medicines]
+      summary: Get the next due medicine for today
+      responses:
+        "200":
+          description: Next medicine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NextMedicine"
+
+  /medicines/{id}:
+    put:
+      operationId: updateMedicine
+      tags: [medicines]
+      summary: Update a medicine
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MedicineInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Medicine"
+    delete:
+      operationId: deleteMedicine
+      tags: [medicines]
+      summary: Delete a medicine and its logs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+
+  /medicines/{id}/taken:
+    post:
+      operationId: markMedicineTaken
+      tags: [medicines]
+      summary: Mark a medicine as taken (creates a log entry)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MedicineLog"
+
+  /log/today:
+    get:
+      operationId: getTodayLog
+      tags: [log]
+      summary: Get today's status for every medicine
+      responses:
+        "200":
+          description: Today's log
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TodayMedicineStatus"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Today's summary — totals, taken, pending, missed
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /log/recent:
+    get:
+      operationId: getRecentActivity
+      tags: [log]
+      summary: Recent intake activity (last 10)
+      responses:
+        "200":
+          description: Recent activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /log/streak:
+    get:
+      operationId: getAdherenceStreak
+      tags: [log]
+      summary: Number of consecutive days with all medicines taken
+      responses:
+        "200":
+          description: Streak data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreakInfo"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    Medicine:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        time:
+          type: string
+          description: HH:MM 24-hour
+        dosage:
+          type: string
+        frequency:
+          type: string
+          enum: [Daily, Weekly, "As Needed"]
+        createdAt:
+          type: string
+      required: [id, name, time, dosage, frequency, createdAt]
+
+    MedicineInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        time:
+          type: string
+          minLength: 1
+        dosage:
+          type: string
+          minLength: 1
+        frequency:
+          type: string
+          enum: [Daily, Weekly, "As Needed"]
+      required: [name, time, dosage, frequency]
+
+    NextMedicine:
+      type: object
+      properties:
+        medicine:
+          oneOf:
+            - $ref: "#/components/schemas/Medicine"
+            - type: "null"
+        status:
+          type: string
+          enum: [due, upcoming, missed, all_done, none]
+        minutesUntil:
+          type: integer
+          nullable: true
+      required: [status]
+
+    MedicineLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        medicineId:
+          type: integer
+        takenAt:
+          type: string
+        date:
+          type: string
+      required: [id, medicineId, takenAt, date]
+
+    TodayMedicineStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        time:
+          type: string
+        dosage:
+          type: string
+        frequency:
+          type: string
+        takenAt:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [taken, pending, missed]
+      required: [id, name, time, dosage, frequency, status]
+
+    DashboardSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        taken:
+          type: integer
+        pending:
+          type: integer
+        missed:
+          type: integer
+        adherencePercent:
+          type: integer
+      required: [total, taken, pending, missed, adherencePercent]
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        medicineId:
+          type: integer
+        medicineName:
+          type: string
+        takenAt:
+          type: string
+        date:
+          type: string
+      required: [id, medicineId, medicineName, takenAt, date]
+
+    StreakInfo:
+      type: object
+      properties:
+        currentStreak:
+          type: integer
+        longestStreak:
+          type: integer
+      required: [currentStreak, longestStreak]
+
+    DeleteResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required: [success]
