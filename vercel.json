@@ -4,11 +4,13 @@
   "services": {
     "api-server": {
       "root": "artifacts/api-server",
-      "framework": "express"
+      "framework": "express",
+      "installCommand": "cd ../.. && npx --yes pnpm@10.26.1 install --no-frozen-lockfile"
     },
     "manocare": {
       "root": "artifacts/manocare",
-      "framework": "vite"
+      "framework": "vite",
+      "installCommand": "cd ../.. && npx --yes pnpm@10.26.1 install --no-frozen-lockfile"
     }
   },
   "rewrites": [
