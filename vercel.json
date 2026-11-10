@@ -10,7 +10,14 @@
     "manocare": {
       "root": "artifacts/manocare",
       "framework": "vite",
-      "installCommand": "cd ../.. && npx --yes pnpm@10.26.1 install --no-frozen-lockfile"
+      "installCommand": "cd ../.. && npx --yes pnpm@10.26.1 install --no-frozen-lockfile",
+      "outputDirectory": "dist/public",
+      "rewrites": [
+        {
+          "source": "/(.*)",
+          "destination": "/index.html"
+        }
+      ]
     }
   },
   "rewrites": [
